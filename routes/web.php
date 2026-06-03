@@ -12,6 +12,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\AttendanceController;
 use App\Http\Controllers\PaidLeaveController;
 use App\Http\Controllers\WorkflowController;
+use App\Http\Controllers\InvoiceController;
 
 Route::get('/', function () {
     return Inertia::render('Welcome', [
@@ -74,6 +75,12 @@ Route::middleware('auth')->group(function () {
     Route::post('/workflows', [WorkflowController::class, 'store'])->name('workflows.store');
     Route::patch('/workflows/{workflow}/approve', [WorkflowController::class, 'approve'])->name('workflows.approve');
     Route::patch('/workflows/{workflow}/reject', [WorkflowController::class, 'reject'])->name('workflows.reject');
+
+    // 💼 請求書管理ルート
+    Route::get('/invoices', [InvoiceController::class, 'index'])->name('invoices.index');
+    Route::post('/invoices', [InvoiceController::class, 'store'])->name('invoices.store');
+    Route::get('/invoices/{invoice}', [InvoiceController::class, 'show'])->name('invoices.show');
+    Route::patch('/invoices/{invoice}/status', [InvoiceController::class, 'updateStatus'])->name('invoices.status.update');
 });
 
 require __DIR__.'/auth.php';
