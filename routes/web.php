@@ -3,6 +3,7 @@
 use App\Http\Controllers\CompanyController;
 use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\EventController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -42,6 +43,11 @@ Route::middleware('auth')->group(function () {
     Route::post('/projects', [ProjectController::class, 'store'])->name('projects.store');
     Route::get('/projects/{project}/edit', [ProjectController::class, 'edit'])->name('projects.edit');
     Route::patch('/projects/{project}', [ProjectController::class, 'update'])->name('projects.update');
+
+    // 🗓️ スケジュール管理
+    Route::get('/events', [EventController::class, 'index'])->name('events.index');
+    Route::post('/events', [EventController::class, 'store'])->name('events.store');
+    Route::delete('/events/{event}', [EventController::class, 'destroy'])->name('events.destroy');
 });
 
 require __DIR__.'/auth.php';
