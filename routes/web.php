@@ -4,6 +4,7 @@ use App\Http\Controllers\CompanyController;
 use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\EventController;
+use App\Http\Controllers\TaskController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -48,6 +49,11 @@ Route::middleware('auth')->group(function () {
     Route::get('/events', [EventController::class, 'index'])->name('events.index');
     Route::post('/events', [EventController::class, 'store'])->name('events.store');
     Route::delete('/events/{event}', [EventController::class, 'destroy'])->name('events.destroy');
+
+    // 📋 カンバンタスク管理
+    Route::get('/projects/{project}/tasks', [TaskController::class, 'board'])->name('projects.tasks.board');
+    Route::post('/projects/{project}/tasks', [TaskController::class, 'store'])->name('projects.tasks.store');
+    Route::patch('/tasks/{task}/status', [TaskController::class, 'updateStatus'])->name('tasks.status.update');
 });
 
 require __DIR__.'/auth.php';

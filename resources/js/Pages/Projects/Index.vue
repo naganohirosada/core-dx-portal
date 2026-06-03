@@ -69,6 +69,9 @@ const statusLabel = (status) => {
                                     </span>
                                 </td>
                                 <td class="px-6 py-4 text-center">
+                                    <Link :href="route('projects.tasks.board', project.id)" class="text-sm font-medium text-indigo-600 hover:text-indigo-900 transition">
+                                        タスク
+                                    </Link>
                                     <Link :href="route('projects.edit', project.id)" class="text-sm font-medium text-indigo-600 hover:text-indigo-900 transition">
                                         編集
                                     </Link>
