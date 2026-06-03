@@ -8,6 +8,9 @@ use App\Http\Controllers\TaskController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
+use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\AttendanceController;
+use App\Http\Controllers\PaidLeaveController;
 
 Route::get('/', function () {
     return Inertia::render('Welcome', [
@@ -18,9 +21,9 @@ Route::get('/', function () {
     ]);
 });
 
-Route::get('/dashboard', function () {
-    return Inertia::render('Dashboard');
-})->middleware(['auth', 'verified'])->name('dashboard');
+Route::get('/dashboard', [DashboardController::class, 'index'])
+    ->middleware(['auth', 'verified'])
+    ->name('dashboard');
 
 Route::middleware('auth')->group(function () {
     // 🛠️ プロフィール関連ルート（ここが消えていたのが原因です）
@@ -54,6 +57,13 @@ Route::middleware('auth')->group(function () {
     Route::get('/projects/{project}/tasks', [TaskController::class, 'board'])->name('projects.tasks.board');
     Route::post('/projects/{project}/tasks', [TaskController::class, 'store'])->name('projects.tasks.store');
     Route::patch('/tasks/{task}/status', [TaskController::class, 'updateStatus'])->name('tasks.status.update');
+
+    // ⏰ 勤怠管理の打刻ルート
+    Route::post('/attendance/punch', [AttendanceController::class, 'punch'])->name('attendance.punch');
+
+    // 🌴 有給休暇管理ルート
+    Route::post('/paid-leaves', [PaidLeaveController::class, 'store'])->name('paid-leaves.store');
+    Route::patch('/paid-leaves/{paidLeave}/approve', [PaidLeaveController::class, 'approve'])->name('paid-leaves.approve');
 });
 
 require __DIR__.'/auth.php';
