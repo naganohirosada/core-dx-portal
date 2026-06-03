@@ -24,4 +24,9 @@ class Event extends Model
         'end' => 'datetime',
         'is_all_day' => 'boolean',
     ];
+
+    public function users(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
+    {
+        return $this->belongsToMany(User::class);
+    }
 }

@@ -38,4 +38,9 @@ class User extends Authenticatable
     public function workflows(): \Illuminate\Database\Eloquent\Relations\HasMany {
         return $this->hasMany(Workflow::class);
     }
+
+    public function events(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
+    {
+        return $this->belongsToMany(Event::class);
+    }
 }
