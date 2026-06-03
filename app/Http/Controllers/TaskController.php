@@ -6,6 +6,8 @@ use App\Models\Project;
 use App\Models\Task;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
+use App\Models\WorkLog;
+use Illuminate\Support\Facades\Auth;
 
 class TaskController extends Controller
 {
@@ -46,5 +48,26 @@ class TaskController extends Controller
 
         // クイック更新なので、直前の画面（ボード）にバックする
         return redirect()->back();
+    }
+
+    /**
+     * 💡 タスクへの工数（作業時間）入力処理
+     */
+    public function storeWorkLog(Request $request, Task $task)
+    {
+        $validated = $request->validate([
+            'hours' => 'required|numeric|min:0.1|max:24',
+            'date' => 'required|date',
+        ]);
+
+        // 💡 ログインユーザー、タスク、日付を紐づけてログを記録
+        WorkLog::create([
+            'user_id' => Auth::id(),
+            'task_id' => $task->id,
+            'date' => $validated['date'],
+            'hours' => $validated['hours'],
+        ]);
+
+        return redirect()->back(); // カンバン画面をそのまま更新
     }
 }

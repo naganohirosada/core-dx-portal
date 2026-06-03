@@ -64,6 +64,9 @@ Route::middleware('auth')->group(function () {
     // 🌴 有給休暇管理ルート
     Route::post('/paid-leaves', [PaidLeaveController::class, 'store'])->name('paid-leaves.store');
     Route::patch('/paid-leaves/{paidLeave}/approve', [PaidLeaveController::class, 'approve'])->name('paid-leaves.approve');
+
+    // 💡 タスクへの工数入力ルート
+    Route::post('/tasks/{task}/work-logs', [TaskController::class, 'storeWorkLog'])->name('tasks.work-logs.store');
 });
 
 require __DIR__.'/auth.php';
