@@ -11,6 +11,7 @@ use Inertia\Inertia;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\AttendanceController;
 use App\Http\Controllers\PaidLeaveController;
+use App\Http\Controllers\WorkflowController;
 
 Route::get('/', function () {
     return Inertia::render('Welcome', [
@@ -67,6 +68,12 @@ Route::middleware('auth')->group(function () {
 
     // 💡 タスクへの工数入力ルート
     Route::post('/tasks/{task}/work-logs', [TaskController::class, 'storeWorkLog'])->name('tasks.work-logs.store');
+
+    // 📝 ワークフロー管理ルート
+    Route::get('/workflows', [WorkflowController::class, 'index'])->name('workflows.index');
+    Route::post('/workflows', [WorkflowController::class, 'store'])->name('workflows.store');
+    Route::patch('/workflows/{workflow}/approve', [WorkflowController::class, 'approve'])->name('workflows.approve');
+    Route::patch('/workflows/{workflow}/reject', [WorkflowController::class, 'reject'])->name('workflows.reject');
 });
 
 require __DIR__.'/auth.php';

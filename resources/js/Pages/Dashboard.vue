@@ -31,6 +31,16 @@ const submitLeave = () => {
     });
 };
 
+const approveNotification = (notif) => {
+    if (confirm('この申請を承認しますか？')) {
+        if (notif.id_type === 'leave') {
+            router.patch(route('paid-leaves.approve', notif.id));
+        } else {
+            router.patch(route('workflows.approve', notif.id));
+        }
+    }
+};
+
 // 申請を承認する関数
 const approveLeave = (leaveId) => {
     if (confirm('この有給申請を承認しますか？ カレンダーへ自動登録されます。')) {
@@ -157,15 +167,15 @@ const breakEnd = () => { attendanceStatus.value = '勤務中'; alert('休憩を�
                                 <div class="space-y-3">
                                     <div v-for="notif in notifications" :key="notif.id" class="p-3 border border-slate-100 rounded-lg hover:bg-slate-50 transition relative group">
                                         <div class="flex items-center space-x-2">
-                                            <span class="text-[10px] px-2 py-0.5 rounded font-bold bg-purple-50 text-purple-700">
-                                                有給申請
+                                            <span class="text-[10px] px-2 py-0.5 rounded font-bold" :class="notif.id_type === 'leave' ? 'bg-purple-50 text-purple-700' : 'bg-amber-50 text-amber-700'">
+                                                {{ notif.type }}
                                             </span>
-                                            <span class="text-[11px] text-slate-400 font-mono">{{ notif.start_date }} 〜 {{ notif.end_date }}</span>
+                                            <span class="text-[11px] text-slate-500 font-medium">{{ notif.meta }}</span>
                                         </div>
-                                        <p class="text-sm font-semibold text-slate-900 mt-1.5">{{ notif.user ? notif.user.name : '不明' }} さんの有給取得</p>
-                                        <p class="text-xs text-slate-500 mt-0.5 pr-12">理由: {{ notif.reason || '未入力' }}</p>
+                                        <p class="text-sm font-semibold text-slate-900 mt-1.5">{{ notif.title }}</p>
+                                        <p class="text-xs text-slate-400 mt-0.5 pr-12">{{ notif.detail }}</p>
                                         
-                                        <button @click="approveLeave(notif.id)" class="absolute right-3 top-1/2 -translate-y-1/2 bg-slate-900 text-white text-xs px-2.5 py-1 rounded shadow-sm hover:bg-indigo-600 transition opacity-0 group-hover:opacity-100">
+                                        <button @click="approveNotification(notif)" class="absolute right-3 top-1/2 -translate-y-1/2 bg-slate-900 text-white text-xs px-2.5 py-1 rounded shadow-sm hover:bg-indigo-600 transition opacity-0 group-hover:opacity-100">
                                             承認
                                         </button>
                                     </div>

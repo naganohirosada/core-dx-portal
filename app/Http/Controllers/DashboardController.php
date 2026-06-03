@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use App\Models\WorkLog;
 use Illuminate\Support\Facades\Auth;
 use App\Models\Attendance;
+use App\Models\Workflow;
 use Inertia\Inertia;
 use Carbon\Carbon;
 use App\Models\PaidLeave;
@@ -67,12 +68,41 @@ class DashboardController extends Controller
             'team_avg' => $teamAvgHours,
         ];
 
+        $realWorkflows = Workflow::with('user')
+            ->where('status', 'pending')
+            ->latest()
+            ->get();
+
+        $allNotifications = [];
+        foreach ($pendingLeaves as $leave) {
+            $allNotifications[] = [
+                'id' => $leave->id,
+                'id_type' => 'leave',
+                'type' => '有給申請',
+                'title' => ($leave->user ? $leave->user->name : '不明') . " さんの有給取得",
+                'meta' => "期間: {$leave->start_date->format('m/d')} 〜 {$leave->end_date->format('m/d')}",
+                'detail' => "理由: " . ($leave->reason ?? '未入力')
+            ];
+        }
+        foreach ($realWorkflows as $wf) {
+            $typeLabel = $wf->type === 'expense' ? '経費精算' : '稟議申請';
+            $amountLabel = $wf->amount ? "【" . number_format($wf->amount) . "円】" : "";
+            $allNotifications[] = [
+                'id' => $wf->id,
+                'id_type' => 'workflow',
+                'type' => $typeLabel,
+                'title' => ($wf->user ? $wf->user->name : '不明') . " さんの" . $typeLabel,
+                'meta' => "{$amountLabel} {$wf->title}",
+                'detail' => "詳細: " . ($wf->description ?? '未入力')
+            ];
+        }
+
         return Inertia::render('Dashboard', [
             'tasks' => $realTasks,
             'currentStatus' => $currentStatus,
             'workTimeData' => $workTimeData,
             'today' => Carbon::today()->format('Y年m月d日'),
-            'notifications' => $pendingLeaves,
+            'notifications' => $allNotifications,
         ]);
     }
 }
