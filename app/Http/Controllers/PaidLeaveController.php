@@ -6,6 +6,7 @@ use App\Models\PaidLeave;
 use App\Models\Event;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Gate;
 
 class PaidLeaveController extends Controller
 {
@@ -27,6 +28,7 @@ class PaidLeaveController extends Controller
     /** 💡 有給の承認処理 ＆ 【神ギミック：カレンダー自動連動】 */
     public function approve(PaidLeave $paidLeave)
     {
+        Gate::authorize('approve-and-invoice');
         // 1. 申請のステータスを「承認済」に更新
         $paidLeave->update(['status' => 'approved']);
 

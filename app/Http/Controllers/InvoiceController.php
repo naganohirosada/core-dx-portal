@@ -7,6 +7,7 @@ use App\Models\Project;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Gate;
 
 class InvoiceController extends Controller
 {
@@ -26,6 +27,7 @@ class InvoiceController extends Controller
     /** 💡 請求書の新規発行処理 */
     public function store(Request $request)
     {
+        Gate::authorize('approve-and-invoice');
         $validated = $request->validate([
             'project_id' => 'required|exists:projects,id',
             'issue_date' => 'required|date',

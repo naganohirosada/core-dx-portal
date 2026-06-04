@@ -25,6 +25,16 @@ class ProjectController extends Controller
         return Inertia::render('Projects/Create', ['companies' => $companies]);
     }
 
+    public function show(\App\Models\Project $project)
+    {
+        // 案件の親である顧客(company)と、子であるタスク(tasks)を同時ロード
+        $project->load(['company', 'tasks']);
+
+        return \Inertia\Inertia::render('Projects/Show', [
+            'project' => $project
+        ]);
+    }
+
     /** 案件登録処理 */
     public function store(Request $request)
     {

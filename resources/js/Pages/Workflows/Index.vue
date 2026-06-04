@@ -97,7 +97,7 @@ const statusClass = (status) => {
                                     <button @click="handleAction(wf.id, 'reject')" class="bg-slate-100 text-slate-600 text-xs font-bold px-3 py-1.5 rounded-lg hover:bg-rose-50 hover:text-rose-600 transition">
                                         却下
                                     </button>
-                                    <button @click="handleAction(wf.id, 'approve')" class="bg-slate-900 text-white text-xs font-bold px-3 py-1.5 rounded-lg hover:bg-indigo-600 transition">
+                                    <button @click="approveNotification(notif)" class="absolute right-3 top-1/2 -translate-y-1/2 bg-slate-900 text-white text-xs px-2.5 py-1 rounded shadow-sm hover:bg-indigo-600 transition">
                                         承認
                                     </button>
                                 </div>

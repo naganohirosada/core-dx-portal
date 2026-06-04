@@ -49,6 +49,9 @@ defineProps({
                                     </span>
                                 </td>
                                 <td class="px-6 py-4 text-center">
+                                    <Link :href="route('companies.show', company.id)" class="text-sm font-medium text-indigo-600 hover:text-indigo-900 transition">
+                                        詳細
+                                    </Link>
                                     <Link :href="route('companies.edit', company.id)" class="text-sm font-medium text-indigo-600 hover:text-indigo-900 transition">
                                         編集
                                     </Link>

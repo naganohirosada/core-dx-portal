@@ -6,6 +6,7 @@ use App\Models\Workflow;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
+use Illuminate\Support\Facades\Gate;
 
 class WorkflowController extends Controller
 {
@@ -42,6 +43,7 @@ class WorkflowController extends Controller
     /** 💡 申請の承認 */
     public function approve(Workflow $workflow)
     {
+        Gate::authorize('approve-and-invoice');
         $workflow->update(['status' => 'approved']);
         return redirect()->back();
     }
@@ -49,6 +51,7 @@ class WorkflowController extends Controller
     /** 💡 申請の却下 */
     public function reject(Workflow $workflow)
     {
+        Gate::authorize('approve-and-invoice');
         $workflow->update(['status' => 'rejected']);
         return redirect()->back();
     }

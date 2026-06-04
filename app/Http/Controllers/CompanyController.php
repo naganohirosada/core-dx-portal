@@ -22,6 +22,16 @@ class CompanyController extends Controller
         return Inertia::render('Companies/Create');
     }
 
+    public function show(\App\Models\Company $company)
+    {
+        // この顧客に紐づく案件一覧(projects)を一緒にロード
+        $company->load('projects');
+
+        return \Inertia\Inertia::render('Companies/Show', [
+            'company' => $company
+        ]);
+    }
+
     /** 新規登録処理 */
     public function store(Request $request)
     {
