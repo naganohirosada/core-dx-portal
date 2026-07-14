@@ -3,6 +3,7 @@ import { Head, Link } from '@inertiajs/vue3';
 
 defineProps({
     invoice: Object,
+    issuer: Object,
 });
 
 // 💡 ブラウザの標準印刷ダイアログを起動（PDF保存もこれで行えます）
@@ -36,15 +37,12 @@ const triggerPrint = () => {
                     </h2>
                     <p class="text-xs text-slate-500">下記の通り、金額をご請求申し上げます。</p>
                 </div>
-                <div class="text-right text-xs space-y-1">
-                    <p class="text-sm font-mono font-bold">請求番号: {{ invoice.invoice_number }}</p>
-                    <p>発行日: {{ invoice.issue_date.slice(0,10) }}</p>
-                    <p>支払期日: {{ invoice.due_date.slice(0,10) }}</p>
-                    <div class="pt-3 font-medium text-left inline-block">
-                        <p class="font-bold text-sm">株式会社 Coredesia</p>
-                        <p>〒100-0001 東京都千代田区千代田1-1</p>
-                        <p>TEL: 03-1234-5678</p>
-                    </div>
+                <div class="text-right">
+                    <p class="font-bold text-lg">{{ issuer.company_name }}</p>
+                    <p class="text-sm text-gray-600">登録番号: {{ issuer.registration_number }}</p>
+                    <p class="text-sm text-gray-600">〒{{ issuer.postal_code }} {{ issuer.address }}</p>
+                    <p class="text-sm text-gray-600">TEL: {{ issuer.phone }}</p>
+                    <p class="text-sm mt-4">請求書番号: {{ invoice.invoice_number }}</p>
                 </div>
             </div>
 

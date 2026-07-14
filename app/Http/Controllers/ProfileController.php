@@ -60,4 +60,23 @@ class ProfileController extends Controller
 
         return Redirect::to('/');
     }
+
+    public function updateSystemSettings(Request $request)
+    {
+        $validated = $request->validate([
+            'company_name' => 'required|string|max:255',
+            'registration_number' => 'required|string|regex:/^T[0-9]{13}$/', // T+13桁の正規表現バリデーション
+            'postal_code' => 'nullable|string|max:8',
+            'address' => 'nullable|string|max:255',
+            'phone' => 'nullable|string|max:20',
+        ]);
+
+        // 最初のレコードを更新、なければ新規作成
+        $setting = \App\Models\SystemSetting::updateOrCreate(
+            ['id' => 1], // シングルテナントなので常にID:1で上書き
+            $validated
+        );
+
+        return back()->with('status', 'system-settings-updated');
+    }
 }
