@@ -26,11 +26,11 @@ const form = useForm({
     <section>
         <header>
             <h2 class="text-lg font-medium text-gray-900">
-                Profile Information
+                アカウント基本情報
             </h2>
 
             <p class="mt-1 text-sm text-gray-600">
-                Update your account's profile information and email address.
+                アカウントのプロフィール氏名とメールアドレスを更新します。
             </p>
         </header>
 
@@ -38,8 +38,9 @@ const form = useForm({
             @submit.prevent="form.patch(route('profile.update'))"
             class="mt-6 space-y-6"
         >
+            <!-- 氏名 -->
             <div>
-                <InputLabel for="name" value="Name" />
+                <InputLabel for="name" value="氏名" />
 
                 <TextInput
                     id="name"
@@ -54,8 +55,9 @@ const form = useForm({
                 <InputError class="mt-2" :message="form.errors.name" />
             </div>
 
+            <!-- メールアドレス -->
             <div>
-                <InputLabel for="email" value="Email" />
+                <InputLabel for="email" value="メールアドレス" />
 
                 <TextInput
                     id="email"
@@ -69,16 +71,17 @@ const form = useForm({
                 <InputError class="mt-2" :message="form.errors.email" />
             </div>
 
+            <!-- メール認証が未完了の場合の警告 -->
             <div v-if="mustVerifyEmail && user.email_verified_at === null">
                 <p class="mt-2 text-sm text-gray-800">
-                    Your email address is unverified.
+                    メールアドレスが未認証です。
                     <Link
                         :href="route('verification.send')"
                         method="post"
                         as="button"
                         class="rounded-md text-sm text-gray-600 underline hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
                     >
-                        Click here to re-send the verification email.
+                        ここをクリックして認証メールを再送信してください。
                     </Link>
                 </p>
 
@@ -86,12 +89,13 @@ const form = useForm({
                     v-show="status === 'verification-link-sent'"
                     class="mt-2 text-sm font-medium text-green-600"
                 >
-                    A new verification link has been sent to your email address.
+                    新しい認証リンクが登録されたメールアドレスに送信されました。
                 </div>
             </div>
 
+            <!-- 保存ボタンと成功トースト文言 -->
             <div class="flex items-center gap-4">
-                <PrimaryButton :disabled="form.processing">Save</PrimaryButton>
+                <PrimaryButton :disabled="form.processing">変更を保存する</PrimaryButton>
 
                 <Transition
                     enter-active-class="transition ease-in-out"
@@ -101,9 +105,9 @@ const form = useForm({
                 >
                     <p
                         v-if="form.recentlySuccessful"
-                        class="text-sm text-gray-600"
+                        class="text-sm font-semibold text-emerald-600"
                     >
-                        Saved.
+                        アカウント情報を更新しました。
                     </p>
                 </Transition>
             </div>

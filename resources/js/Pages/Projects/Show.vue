@@ -34,6 +34,12 @@ const statusLabel = (status) => {
                         <p class="font-bold text-slate-900 text-base mt-0.5">{{ project.company?.name }}</p>
                     </div>
                     <div class="border-t border-slate-100 pt-3">
+                        <h3 class="text-xs font-bold text-slate-400 uppercase">Description</h3>
+                        <div class="mt-1.5 p-3 bg-slate-50 border border-slate-100 rounded-lg text-xs text-slate-700 leading-relaxed whitespace-pre-wrap">
+                            {{ project.description || '案件詳細の登録はありません。' }}
+                        </div>
+                    </div>
+                    <div class="border-t border-slate-100 pt-3">
                         <h3 class="text-xs font-bold text-slate-400 uppercase">Budget</h3>
                         <p class="font-mono font-bold text-slate-900 text-lg mt-0.5">￥{{ project.budget?.toLocaleString() || '-' }}</p>
                     </div>

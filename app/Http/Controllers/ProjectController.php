@@ -43,6 +43,7 @@ class ProjectController extends Controller
             'name' => 'required|string|max:255',
             'start_date' => 'nullable|date',
             'end_date' => 'nullable|date',
+            'description' => 'nullable|string',
             'budget' => 'nullable|integer|min:0',
         ]);
 
@@ -69,6 +70,7 @@ class ProjectController extends Controller
             'start_date' => 'nullable|date',
             'end_date' => 'nullable|date',
             'budget' => 'nullable|integer|min:0',
+            'description' => 'nullable|string',
             'status' => 'required|string|in:lead,ongoing,completed,suspended',
         ]);
 

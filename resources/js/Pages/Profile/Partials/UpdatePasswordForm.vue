@@ -37,18 +37,18 @@ const updatePassword = () => {
     <section>
         <header>
             <h2 class="text-lg font-medium text-gray-900">
-                Update Password
+                パスワードの変更
             </h2>
 
             <p class="mt-1 text-sm text-gray-600">
-                Ensure your account is using a long, random password to stay
-                secure.
+                アカウントの安全性を維持するため、定期的なパスワードの更新を推奨します。
             </p>
         </header>
 
         <form @submit.prevent="updatePassword" class="mt-6 space-y-6">
+            <!-- 現在のパスワード -->
             <div>
-                <InputLabel for="current_password" value="Current Password" />
+                <InputLabel for="current_password" value="現在のパスワード" />
 
                 <TextInput
                     id="current_password"
@@ -65,8 +65,9 @@ const updatePassword = () => {
                 />
             </div>
 
+            <!-- 新しいパスワード -->
             <div>
-                <InputLabel for="password" value="New Password" />
+                <InputLabel for="password" value="新しいパスワード" />
 
                 <TextInput
                     id="password"
@@ -80,10 +81,11 @@ const updatePassword = () => {
                 <InputError :message="form.errors.password" class="mt-2" />
             </div>
 
+            <!-- 新しいパスワード（確認） -->
             <div>
                 <InputLabel
                     for="password_confirmation"
-                    value="Confirm Password"
+                    value="新しいパスワード（確認用再入力）"
                 />
 
                 <TextInput
@@ -100,8 +102,9 @@ const updatePassword = () => {
                 />
             </div>
 
+            <!-- 保存ボタンと成功トースト文言 -->
             <div class="flex items-center gap-4">
-                <PrimaryButton :disabled="form.processing">Save</PrimaryButton>
+                <PrimaryButton :disabled="form.processing">パスワードを更新する</PrimaryButton>
 
                 <Transition
                     enter-active-class="transition ease-in-out"
@@ -111,9 +114,9 @@ const updatePassword = () => {
                 >
                     <p
                         v-if="form.recentlySuccessful"
-                        class="text-sm text-gray-600"
+                        class="text-sm font-semibold text-emerald-600"
                     >
-                        Saved.
+                        パスワードを正常に変更しました。
                     </p>
                 </Transition>
             </div>

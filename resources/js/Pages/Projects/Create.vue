@@ -12,6 +12,7 @@ const form = useForm({
     start_date: '',
     end_date: '',
     budget: '',
+    description: '',
 });
 
 const submit = () => {
@@ -46,6 +47,16 @@ const submit = () => {
                         <div>
                             <label class="block text-sm font-medium text-slate-700">案件名 <span class="text-red-500">*</span></label>
                             <input v-model="form.name" type="text" required class="mt-1 block w-full rounded-lg border-slate-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm" placeholder="DXポータル構築プロジェクト" />
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700">案件詳細・要件メモ</label>
+                            <textarea 
+                                v-model="form.description" 
+                                rows="4" 
+                                class="mt-1 block w-full rounded-lg border-slate-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm" 
+                                placeholder="システムの要件定義、開発範囲、マイルストーンなどの詳細を記入してください"
+                            ></textarea>
                         </div>
 
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">

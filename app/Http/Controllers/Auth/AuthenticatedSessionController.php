@@ -25,29 +25,30 @@ class AuthenticatedSessionController extends Controller
     }
 
     /**
-     * Handle an incoming authentication request.
+     * 💡 ログイン認証の実行処理
      */
     public function store(LoginRequest $request): RedirectResponse
     {
-
         $request->authenticate();
 
+        // 2. セッションの再生成（固定化攻撃対策）
         $request->session()->regenerate();
 
+        // 3. ログイン成功後、ダッシュボードへリダイレクト
         return redirect()->intended(route('dashboard', absolute: false));
     }
 
     /**
-     * Destroy an authenticated session.
+     * 💡 ログアウト処理
      */
     public function destroy(Request $request): RedirectResponse
     {
         Auth::guard('web')->logout();
 
         $request->session()->invalidate();
-
         $request->session()->regenerateToken();
 
+        // ログアウト後は、新しく作った製品LP（トップページ）に綺麗に戻します
         return redirect('/');
     }
 }

@@ -15,11 +15,13 @@ use App\Http\Controllers\WorkflowController;
 use App\Http\Controllers\InvoiceController;
 
 Route::get('/', function () {
+    if (Auth::check()) {
+        return redirect()->route('dashboard');
+    }
+
     return Inertia::render('Welcome', [
         'canLogin' => Route::has('login'),
         'canRegister' => Route::has('register'),
-        'laravelVersion' => Application::VERSION,
-        'phpVersion' => PHP_VERSION,
     ]);
 });
 
@@ -77,6 +79,15 @@ Route::middleware('auth')->group(function () {
     Route::post('/workflows', [WorkflowController::class, 'store'])->name('workflows.store');
     Route::patch('/workflows/{workflow}/approve', [WorkflowController::class, 'approve'])->name('workflows.approve');
     Route::patch('/workflows/{workflow}/reject', [WorkflowController::class, 'reject'])->name('workflows.reject');
+
+
+    // 既存のプロフィールルートの並びに追記します
+    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
+    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+
+    // ★ 追加：自社インボイス設定（システム設定）の更新用ルート
+    Route::patch('/profile/system-settings', [ProfileController::class, 'updateSystemSettings'])->name('profile.system-settings.update');
 
     // 💼 請求書管理ルート
     Route::get('/invoices', [InvoiceController::class, 'index'])->name('invoices.index');

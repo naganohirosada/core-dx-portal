@@ -18,12 +18,21 @@ class ProfileController extends Controller
      */
     public function edit(Request $request): Response
     {
+        // 💡 修正・追加：ログインユーザーが所属する企業（テナント）の設定を取得、なければ自動生成
+        $systemSetting = \App\Models\SystemSetting::firstOrCreate(
+            ['id' => $request->user()->system_setting_id],
+            [
+                'company_name' => $request->user()->name . 'の会社', 
+                'registration_number' => 'T1234567890123'
+            ]
+        );
+
         return Inertia::render('Profile/Edit', [
-            'mustVerifyEmail' => $request->user() instanceof MustVerifyEmail,
+            'mustVerifyEmail' => $request->user() instanceof \Illuminate\Contracts\Auth\MustVerifyEmail,
             'status' => session('status'),
+            'systemSetting' => $systemSetting, // ★ 追加：Vue側に自社マスタのデータをトス
         ]);
     }
-
     /**
      * Update the user's profile information.
      */
@@ -65,15 +74,15 @@ class ProfileController extends Controller
     {
         $validated = $request->validate([
             'company_name' => 'required|string|max:255',
-            'registration_number' => 'required|string|regex:/^T[0-9]{13}$/', // T+13桁の正規表現バリデーション
+            'registration_number' => 'required|string|regex:/^T[0-9]{13}$/', // T+13桁のバリデーション
             'postal_code' => 'nullable|string|max:8',
             'address' => 'nullable|string|max:255',
             'phone' => 'nullable|string|max:20',
         ]);
 
-        // 最初のレコードを更新、なければ新規作成
+        // 💡 修正：['id' => 1] での固定上書きを廃止し、ログインユーザー自身の所属企業IDで安全に更新
         $setting = \App\Models\SystemSetting::updateOrCreate(
-            ['id' => 1], // シングルテナントなので常にID:1で上書き
+            ['id' => auth()->user()->system_setting_id], 
             $validated
         );
 
