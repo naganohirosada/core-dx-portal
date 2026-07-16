@@ -1,58 +1,143 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+開発環境（Laravel Sail / Docker）の構成を活かしつつ、Renderの無料〜格安枠で「Webサーバー」と「データベース」をパパッと立ち上げる最短ルートです。
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+---
 
-## About Laravel
+## 🚀 Renderで最速デモ公開する5ステップ
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+全体フローは以下の通りです。
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+```
+[ あなたのPC ] ➔ プッシュ ➔ [ GitHub ] ➔ 自動検知 ➔ [ Render (本番サーバー) ]
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
-
-## Learning Laravel
-
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
-
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
-
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
-
-## Agentic Development
-
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
-
-```bash
-composer require laravel/boost --dev
-
-php artisan boost:install
 ```
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
+---
 
-## Contributing
+### ステップ1：本番用のデータベース（PostgreSQL）を起動
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+Renderでは、無料/格安で**PostgreSQL**のデータベースをワンクリックで作成できます。Laravelは設定1つでMySQLからPostgreSQLに切り替えられるため、本番はRenderと相性が良いPostgreSQLを使います。
 
-## Code of Conduct
+1. [Render公式サイト](https://render.com/)にログインし、画面右上の **「New」➔「PostgreSQL」** を選択。
+2. 以下の通り入力して「Create Database」をクリック。
+* **Name**: `coredesia-db`
+* **Database**: `coredesia`
+* **User**: `dbuser`
+* **Region**: `Singapore` (日本から一番近いリージョン)
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
 
-## Security Vulnerabilities
+3. 作成後、画面に表示される **「Internal Database URL」**（`postgres://...` から始まる文字列）をメモ帳にコピーしておきます。
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+---
 
-## License
+### ステップ2：本番デプロイ用の「Dockerfile」を配置
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+Renderに「これはLaravelのシステムだよ」と教えてあげるために、プロジェクトのルートディレクトリ（`core-dx-portal` 直下）に本番専用の軽量な設定ファイルを1枚だけ作成します。
+
+#### ① `Dockerfile` の作成
+
+プロジェクトのルート直下に `Dockerfile` という名前（拡張子なし）でファイルを作成し、以下の内容をそのまま貼り付けます。
+
+```dockerfile
+FROM php:8.3-apache
+
+# 必要なLinuxパッケージとPHP拡張モジュールのインストール
+RUN apt-get update && apt-get install -y \
+    libpng-dev libjpeg-dev libfreetype6-dev zip unzip git nodejs npm \
+    && docker-php-ext-configure gd --with-freetype --with-jpeg \
+    && docker-php-ext-install pdo_mysql gd
+
+# Apacheの設定（ドキュメントルートをpublicに変更）
+RUN sed -i 's!/var/www/html!/var/www/html/public!g' /etc/apache2/sites-available/000-default.conf
+RUN a2enmod rewrite
+
+# ワークディレクトリの設定
+WORKDIR /var/www/html
+COPY . .
+
+# Composerのインストールと実行
+COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+RUN composer install --no-dev --optimize-autoloader
+
+# フロントエンド（Vite）のビルド
+RUN npm install && npm run build
+
+# 権限の変更
+RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
+
+# ポートの指定
+EXPOSE 80
+
+```
+
+---
+
+### ステップ3：GitHubへソースコードをプッシュ
+
+RenderはGitHubのリポジトリと連動して動くため、現在のコードをGitHubにアップロードします。
+
+WSL2のターミナルで以下を順番に実行します。
+
+```bash
+git add .
+git commit -m "feat: 本番デプロイ用Dockerfileの追加"
+git push origin main
+
+```
+
+---
+
+### ステップ4：Renderで「Web Service」を作成
+
+いよいよWebサーバー（画面を映すコンテナ）を立ち上げます。
+
+1. Renderの管理画面右上 **「New」➔「Web Service」** を選択。
+2. **「Build and deploy from a Git repository」** を選択し、自分のGitHubから `core-dx-portal` のリポジトリを連携します。
+3. 設定画面で以下のように入力します。
+* **Name**: `coredesia-portal` (これがURLの一部になります)
+* **Region**: `Singapore`
+* **Branch**: `main`
+* **Language**: `Docker` (★ここをDockerにすることで、ステップ2のファイルが自動起動します)
+* **Instance Type**: `Free`（または一番安い有料プラン。Freeプランは15分アクセスがないと一瞬スリープしますが、審査用なら十分です）
+
+
+4. 最下部の **「Advanced」** ボタンをクリックして、次のステップ5（環境変数）に進みます。
+
+---
+
+### ステップ5：環境変数（`.env`）の投入
+
+「Advanced」エリアにある **「Add Environment Variable」** をクリックして、Laravelを本番モードで動かすための鍵（環境変数）を登録していきます。
+
+以下のセットを1つずつ追加してください。
+
+| KEY | VALUE | 補足 |
+| --- | --- | --- |
+| `APP_ENV` | `production` | 本番モードで起動
+
+ |
+| `APP_DEBUG` | `false` | エラー画面を隠してセキュリティ強化
+
+ |
+| `APP_KEY` | `base64:xxxxxxx...` | ローカルの `.env` にある値をそのままコピー
+
+ |
+| `DB_CONNECTION` | `pgsql` | PostgreSQLに切り替え
+
+ |
+| `DATABASE_URL` | *(ステップ1でメモしたInternal Database URL)* | `postgres://...` のURLをそのままペースト |
+
+入力が終わったら、一番下の **「Create Web Service」** をクリックします！
+
+---
+
+## 🏁 あとは待つだけでURLが発行されます！
+
+ボタンを押すと、Renderが自動的にプログラムのビルド、Viteのコンパイル、サーバーの起動までを全自動で実行してくれます（約5〜10分）。
+
+ログ画面に `Multi-stage build success` や `Live` と表示され、画面左上のURL（`[https://coredesia-portal.onrender.com](https://coredesia-portal.onrender.com)` など）をクリックして「統合DXポータル：Coredesia」の美しいトップページ（LP）が表示されれば完全大成功です！🎉
+
+---
+
+インボイスのシステム改修から、タブUI、日本語化、そして本番インフラの手順まで怒涛のスピードで一気に揃いましたね。
+
+Renderのビルド中、あるいはURLが無事に立ち上がったのち、**「補助金審査のために、データベースにテスト用のA社・B社のデモデータを一発で流し込む設定（Seeder）」** の準備に取り掛かりましょうか？
