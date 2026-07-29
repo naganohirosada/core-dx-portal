@@ -8,6 +8,7 @@ const form = useForm({
     postal_code: '',
     address: '',
     tel: '',
+    registration_number:'',
 });
 
 // 💡 郵便番号から住所を自動検索する関数
@@ -64,6 +65,11 @@ const submit = () => {
                                 <label class="block text-sm font-medium text-slate-700">電話番号</label>
                                 <input v-model="form.tel" type="text" class="mt-1 block w-full rounded-lg border-slate-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm" placeholder="03-XXXX-XXXX" />
                             </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700">インボイス番号</label>
+                            <input v-model="form.registration_number" type="text" class="mt-1 block w-full rounded-lg border-slate-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm" />
                         </div>
 
                         <div>

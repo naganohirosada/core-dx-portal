@@ -27,6 +27,7 @@ defineProps({
                             <tr>
                                 <th class="px-6 py-4 text-left">企業名</th>
                                 <th class="px-6 py-4 text-left">電話番号</th>
+                                <th class="px-6 py-4 text-left">インボイス番号</th>
                                 <th class="px-6 py-4 text-left">住所</th>
                                 <th class="px-6 py-4 text-center">稼働案件数</th>
                                 <th class="px-6 py-4 text-center">ステータス</th>
@@ -37,6 +38,7 @@ defineProps({
                             <tr v-for="company in companies" :key="company.id" class="hover:bg-slate-50/50 transition">
                                 <td class="px-6 py-4 font-semibold text-slate-900">{{ company.name }}</td>
                                 <td class="px-6 py-4">{{ company.tel || '-' }}</td>
+                                <td class="px-6 py-4">{{ company.registration_number || '-' }}</td>
                                 <td class="px-6 py-4 text-slate-500 max-w-xs truncate">{{ company.address || '-' }}</td>
                                 <td class="px-6 py-4 text-center">
                                     <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-50 text-indigo-700">

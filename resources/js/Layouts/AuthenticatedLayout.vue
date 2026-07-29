@@ -60,6 +60,16 @@ const canManage = () => {
                     <Link :href="route('invoices.index')" :class="route().current('invoices.*') ? 'bg-indigo-600 text-white' : 'hover:bg-slate-800 hover:text-white'" class="flex items-center space-x-3 px-3 py-2.5 rounded-lg text-sm font-medium transition">
                         <span>💴</span> <span>請求書・売上管理</span>
                     </Link>
+
+                    <!-- 合計残高試算表への導線 -->
+                    <Link :href="route('accounting.trial-balance')" :class="route().current('accounting.trial-balance') ? 'bg-indigo-600 text-white' : 'hover:bg-slate-800 hover:text-white'" class="flex items-center space-x-3 px-3 py-2.5 rounded-lg text-sm font-medium transition">
+                        <span>📊</span> <span>合計残高試算表</span>
+                    </Link>
+
+                    <!-- 決算財務諸表への導線 -->
+                    <Link :href="route('accounting.financial-statements')" :class="route().current('accounting.financial-statements') ? 'bg-indigo-600 text-white' : 'hover:bg-slate-800 hover:text-white'" class="flex items-center space-x-3 px-3 py-2.5 rounded-lg text-sm font-medium transition">
+                        <span>📜</span> <span>決算財務諸表 (B/S・P/L)</span>
+                    </Link>
                 </nav>
             </div>
 

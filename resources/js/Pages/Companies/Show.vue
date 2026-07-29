@@ -42,6 +42,10 @@ defineProps({
                             <label class="block text-xs font-medium text-slate-400">所在地</label>
                             <p class="text-slate-800 mt-0.5">〒{{ company.postal_code }}<br>{{ company.address }}</p>
                         </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-400">インボイス番号</label>
+                            <p class="text-slate-800 mt-0.5">{{ company.registration_number }}</p>
+                        </div>
                     </div>
                 </div>
 

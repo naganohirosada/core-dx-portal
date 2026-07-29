@@ -12,6 +12,7 @@ const form = useForm({
     postal_code: props.company.postal_code || '',
     address: props.company.address || '',
     tel: props.company.tel || '',
+    registration_number: props.registration_number || '',
     status: props.company.status,
 });
 
@@ -68,6 +69,11 @@ const submit = () => {
                         <div>
                             <label class="block text-sm font-medium text-slate-700">住所</label>
                             <input v-model="form.address" type="text" class="mt-1 block w-full rounded-lg border-slate-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm" />
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700">インボイス番号</label>
+                            <input v-model="form.registration_number" type="text" class="mt-1 block w-full rounded-lg border-slate-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm" />
                         </div>
 
                         <div>

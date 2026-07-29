@@ -39,6 +39,7 @@ class CompanyController extends Controller
             'name' => 'required|string|max:255',
             'postal_code' => 'nullable|string|max:8',
             'address' => 'nullable|string|max:255',
+            'registration_number' => 'nullable|string|max:20',
             'tel' => 'nullable|string|max:20',
         ]);
 
@@ -60,6 +61,7 @@ class CompanyController extends Controller
             'postal_code' => 'nullable|string|max:8',
             'address' => 'nullable|string|max:255',
             'tel' => 'nullable|string|max:20',
+            'registration_number' => 'nullable|string|max:20',
             'status' => 'required|string|in:active,inactive',
         ]);
 

@@ -10,6 +10,17 @@ defineProps({
 const triggerPrint = () => {
     window.print();
 };
+
+// 日付を `YYYY年MM月DD日` 形式で返すユーティリティ
+const formatDate = (d) => {
+    if (!d) return '';
+    const dt = new Date(d);
+    if (isNaN(dt.getTime())) return d;
+    const y = dt.getFullYear();
+    const m = String(dt.getMonth() + 1).padStart(2, '0');
+    const day = String(dt.getDate()).padStart(2, '0');
+    return `${y}年${m}月${day}日`;
+};
 </script>
 
 <template>
@@ -43,6 +54,9 @@ const triggerPrint = () => {
                     <p class="text-sm text-gray-600">〒{{ issuer.postal_code }} {{ issuer.address }}</p>
                     <p class="text-sm text-gray-600">TEL: {{ issuer.phone }}</p>
                     <p class="text-sm mt-4">請求書番号: {{ invoice.invoice_number }}</p>
+                    <p class="text-sm">取引日: {{ formatDate(invoice.transaction_date || invoice.issue_date) }}</p>
+                    <p class="text-sm">発行日: {{ formatDate(invoice.issue_date) }}</p>
+                    <p class="text-sm">支払期限日: {{ formatDate(invoice.due_date) }}</p>
                 </div>
             </div>
 
@@ -61,22 +75,22 @@ const triggerPrint = () => {
                     </tr>
                 </thead>
                 <tbody>
-                    <tr class="border-b border-slate-300">
-                        <td class="border-r border-slate-300 p-4 font-medium">
-                            {{ invoice.project?.name }} に伴う業務一式
-                        </td>
-                        <td class="border-r border-slate-300 p-4 text-right font-mono">1</td>
-                        <td class="border-r border-slate-300 p-4 text-right font-mono">{{ invoice.amount.toLocaleString() }}</td>
-                        <td class="p-4 text-right font-mono font-bold">{{ invoice.amount.toLocaleString() }}</td>
-                    </tr>
-                    <tr v-for="i in 3" :key="i" class="border-b border-slate-200 h-10">
-                        <td class="border-r border-slate-300 p-2"></td>
-                        <td class="border-r border-slate-300 p-2"></td>
-                        <td class="border-r border-slate-300 p-2"></td>
-                        <td class="p-2"></td>
+                    <tr v-for="it in invoice.items" :key="it.id" class="border-b border-slate-300">
+                        <td class="border-r border-slate-300 p-4 font-medium">{{ it.description || invoice.project?.name }}</td>
+                        <td class="border-r border-slate-300 p-4 text-right font-mono">{{ it.quantity }}</td>
+                        <td class="border-r border-slate-300 p-4 text-right font-mono">{{ Number(it.unit_price).toLocaleString() }}</td>
+                        <td class="p-4 text-right font-mono font-bold">{{ Number(it.subtotal).toLocaleString() }}</td>
                     </tr>
                 </tbody>
             </table>
+
+            <div class="max-w-md ml-auto mt-4 text-sm">
+                <div class="flex justify-between py-1 text-slate-700"><span>小計（10%）</span><span class="font-mono">￥{{ (invoice.subtotal_10_percent || 0).toLocaleString() }}</span></div>
+                <div class="flex justify-between py-1 text-slate-700"><span>消費税（10%）</span><span class="font-mono">￥{{ (invoice.tax_amount_10_percent || 0).toLocaleString() }}</span></div>
+                <div class="flex justify-between py-1 text-slate-700"><span>小計（8%）</span><span class="font-mono">￥{{ (invoice.subtotal_8_percent || 0).toLocaleString() }}</span></div>
+                <div class="flex justify-between py-1 text-slate-700"><span>消費税（8%）</span><span class="font-mono">￥{{ (invoice.tax_amount_8_percent || 0).toLocaleString() }}</span></div>
+                <div class="border-t border-slate-300 mt-2 pt-2 flex justify-between text-lg font-bold"><span>合計（税込）</span><span class="font-mono">￥{{ Number(invoice.amount).toLocaleString() }}</span></div>
+            </div>
 
             <div class="border border-slate-300 p-4 rounded-lg print:rounded-none text-xs bg-slate-50/50">
                 <h4 class="font-bold text-slate-700 mb-1.5">【備考 / 振込口座案内】</h4>

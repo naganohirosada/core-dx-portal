@@ -13,6 +13,7 @@ use App\Http\Controllers\AttendanceController;
 use App\Http\Controllers\PaidLeaveController;
 use App\Http\Controllers\WorkflowController;
 use App\Http\Controllers\InvoiceController;
+use App\Http\Controllers\AccountingController;
 
 Route::get('/', function () {
     if (Auth::check()) {
@@ -94,6 +95,25 @@ Route::middleware('auth')->group(function () {
     Route::post('/invoices', [InvoiceController::class, 'store'])->name('invoices.store');
     Route::get('/invoices/{invoice}', [InvoiceController::class, 'show'])->name('invoices.show');
     Route::patch('/invoices/{invoice}/status', [InvoiceController::class, 'updateStatus'])->name('invoices.status.update');
+
+    Route::middleware(['auth', 'verified'])->prefix('accounting')->name('accounting.')->group(function () {
+        // 試算表画面への導線
+        Route::get('/trial-balance', function () {
+            $statements = app(AccountingController::class)->getFinancialStatements()->getData(true);
+            return inertia('Accounting/TrialBalance', [
+                'trialBalance' => $statements['trial_balance']
+            ]);
+        })->name('trial-balance');
+
+        // 財務諸表画面への導線
+        Route::get('/financial-statements', function () {
+            $statements = app(AccountingController::class)->getFinancialStatements()->getData(true);
+            return inertia('Accounting/FinancialStatements', [
+                'balanceSheet' => $statements['balance_sheet'],
+                'profitAndLoss' => $statements['profit_and_loss']
+            ]);
+        })->name('financial-statements');
+    });
 });
 
 require __DIR__.'/auth.php';
