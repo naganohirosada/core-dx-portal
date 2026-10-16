@@ -1,10 +1,20 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
-import { Head, Link } from '@inertiajs/vue3';
+import { Head, Link, useForm } from '@inertiajs/vue3';
 
 defineProps({
     companies: Array,
+    importResult: Object,
 });
+
+// 💡 顧客CSVの一括取込（見出し: 企業名,郵便番号,住所,電話番号,インボイス番号）
+const importForm = useForm({ file: null });
+const submitImport = () => {
+    importForm.post(route('companies.import'), {
+        forceFormData: true,
+        onSuccess: () => importForm.reset(),
+    });
+};
 </script>
 
 <template>
@@ -20,7 +30,21 @@ defineProps({
         </template>
 
         <div class="py-12">
-            <div class="mx-auto max-w-7xl sm:px-6 lg:px-8">
+            <div class="mx-auto max-w-7xl sm:px-6 lg:px-8 space-y-6">
+                <div class="bg-white shadow-sm border border-slate-100 rounded-xl p-6">
+                    <h3 class="text-sm font-bold text-slate-900 mb-1">CSVで一括取込</h3>
+                    <p class="text-xs text-slate-500 mb-3">1行目を見出し（企業名,郵便番号,住所,電話番号,インボイス番号）としたCSVを取り込めます。Excelで保存したShift_JISのCSVにも対応しています。</p>
+                    <form @submit.prevent="submitImport" class="flex flex-wrap items-center gap-3">
+                        <input type="file" accept=".csv,text/csv" required @input="importForm.file = $event.target.files[0]" class="text-sm" />
+                        <button type="submit" :disabled="importForm.processing" class="bg-slate-900 text-white text-sm font-medium px-4 py-2 rounded-lg hover:bg-slate-800 transition">取り込む</button>
+                        <p v-if="importForm.errors.file" class="w-full text-xs text-rose-600">{{ importForm.errors.file }}</p>
+                    </form>
+                    <div v-if="importResult" class="mt-3 text-xs">
+                        <p class="text-emerald-700 font-bold">{{ importResult.imported }}件を取り込みました。</p>
+                        <p v-for="err in importResult.errors" :key="err" class="text-rose-600">{{ err }}</p>
+                    </div>
+                </div>
+
                 <div class="bg-white shadow-sm border border-slate-100 rounded-xl overflow-hidden">
                     <table class="min-w-full divide-y divide-slate-100 text-sm">
                         <thead class="bg-slate-50/70 text-slate-500 font-medium">

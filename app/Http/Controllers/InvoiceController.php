@@ -6,6 +6,7 @@ use App\Models\Invoice;
 use App\Models\Project;
 use App\Models\Account;
 use App\Models\Journal;
+use App\Services\JournalService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Carbon\Carbon;
@@ -17,7 +18,7 @@ class InvoiceController extends Controller
     /** 💡 請求書一覧・作成画面 */
     public function index()
     {
-        $invoices = Invoice::with('project.company')->latest()->get();
+        $invoices = Invoice::with('project.company')->withSum('payments as paid_amount', 'amount')->latest()->get();
         $projects = Project::with('company')->get();
 
         return Inertia::render('Invoices/Index', [
@@ -142,7 +143,8 @@ class InvoiceController extends Controller
     {
         $invoice->load('project.company', 'items');
 
-        $issuer = \App\Models\SystemSetting::first() ?? new \App\Models\SystemSetting([
+        // 発行元はログインユーザーが所属する会社（テナント）の設定を使う
+        $issuer = \App\Models\SystemSetting::find(auth()->user()->system_setting_id) ?? new \App\Models\SystemSetting([
             'company_name' => '自社未設定',
         ]);
 
@@ -152,43 +154,120 @@ class InvoiceController extends Controller
         ]);
     }
 
-    /** 💡 入金ステータスの更新（売掛消込の自動仕訳） */
-    public function updateStatus(Request $request, Invoice $invoice)
+    /** 💡 入金ステータスの更新（「入金済」にした場合は未回収残高を全額消込して自動仕訳） */
+    public function updateStatus(Request $request, Invoice $invoice, JournalService $journals)
     {
         $validated = $request->validate([
             'status' => 'required|in:draft,sent,paid',
         ]);
 
-        DB::transaction(function () use ($validated, $invoice) {
+        DB::transaction(function () use ($validated, $invoice, $journals) {
             $oldStatus = $invoice->status;
             $invoice->update($validated);
 
-            // 「paid（入金済）」に変更されたタイミングで入金仕訳を生成
+            // 「paid（入金済）」に変更されたタイミングで、残っている売掛金を全額入金として消込む
             if ($validated['status'] === 'paid' && $oldStatus !== 'paid') {
-                $futsuAccount = Account::firstOrCreate(['code' => '1112'], ['name' => '普通預金', 'type' => 'asset']);
-                $urikakeAccount = Account::firstOrCreate(['code' => '1131'], ['name' => '売掛金', 'type' => 'asset']);
-
-                $journal = Journal::create([
-                    'date' => Carbon::now()->toDateString(), 
-                    'description' => "売掛金回収(入金完了): {$invoice->invoice_number}",
-                ]);
-
-                // 借方: 普通預金
-                $journal->details()->create([
-                    'account_id' => $futsuAccount->id,
-                    'side' => 'debit',
-                    'amount' => $invoice->amount,
-                ]);
-
-                // 貸方: 売掛金 (消込)
-                $journal->details()->create([
-                    'account_id' => $urikakeAccount->id,
-                    'side' => 'credit',
-                    'amount' => $invoice->amount,
-                ]);
+                $outstanding = $invoice->outstandingAmount();
+                if ($outstanding > 0) {
+                    $this->recordPayment($invoice, Carbon::now()->toDateString(), $outstanding, $journals);
+                }
             }
         });
 
         return redirect()->back();
+    }
+
+    /** 💡 入金消込（入金日と入金額を登録。一部入金にも対応し、全額回収で「入金済」にする） */
+    public function storePayment(Request $request, Invoice $invoice, JournalService $journals)
+    {
+        Gate::authorize('approve-and-invoice');
+
+        $outstanding = $invoice->outstandingAmount();
+        $validated = $request->validate([
+            'payment_date' => 'required|date',
+            'amount' => "required|integer|min:1|max:{$outstanding}",
+        ], [
+            'amount.max' => "入金額が未回収残高（{$outstanding}円）を超えています。",
+        ]);
+
+        DB::transaction(function () use ($validated, $invoice, $journals) {
+            $this->recordPayment($invoice, $validated['payment_date'], (int) $validated['amount'], $journals);
+
+            if ($invoice->outstandingAmount() <= 0) {
+                $invoice->update(['status' => 'paid']);
+            }
+        });
+
+        return redirect()->back();
+    }
+
+    /** 💡 売掛金の年齢調べ（支払期日からの経過日数で未回収債権を区分） */
+    public function aging()
+    {
+        $today = Carbon::today();
+        $buckets = ['current' => '期日内', 'd1_30' => '1〜30日', 'd31_60' => '31〜60日', 'd61_90' => '61〜90日', 'd91_plus' => '91日超'];
+
+        $rows = Invoice::with('company')
+            ->withSum('payments as paid_amount', 'amount')
+            ->where('status', '!=', 'paid')
+            ->orderBy('due_date')
+            ->get()
+            ->map(function (Invoice $invoice) use ($today) {
+                $outstanding = (int) $invoice->amount - (int) $invoice->paid_amount;
+                $overdueDays = $invoice->due_date->lt($today) ? (int) $invoice->due_date->diffInDays($today) : 0;
+                $bucket = match (true) {
+                    $overdueDays === 0 => 'current',
+                    $overdueDays <= 30 => 'd1_30',
+                    $overdueDays <= 60 => 'd31_60',
+                    $overdueDays <= 90 => 'd61_90',
+                    default => 'd91_plus',
+                };
+
+                return [
+                    'id' => $invoice->id,
+                    'invoice_number' => $invoice->invoice_number,
+                    'company_name' => $invoice->company?->name ?? '（顧客未設定）',
+                    'due_date' => $invoice->due_date->toDateString(),
+                    'amount' => (int) $invoice->amount,
+                    'outstanding' => $outstanding,
+                    'overdue_days' => $overdueDays,
+                    'bucket' => $bucket,
+                ];
+            })
+            ->filter(fn ($row) => $row['outstanding'] > 0)
+            ->values();
+
+        // 顧客別 × 経過区分の集計
+        $summary = $rows->groupBy('company_name')->map(function ($items, $companyName) use ($buckets) {
+            $line = ['company_name' => $companyName, 'total' => $items->sum('outstanding')];
+            foreach (array_keys($buckets) as $key) {
+                $line[$key] = $items->where('bucket', $key)->sum('outstanding');
+            }
+            return $line;
+        })->values();
+
+        $totals = ['total' => $rows->sum('outstanding')];
+        foreach (array_keys($buckets) as $key) {
+            $totals[$key] = $rows->where('bucket', $key)->sum('outstanding');
+        }
+
+        return Inertia::render('Accounting/Receivables', [
+            'buckets' => $buckets,
+            'summary' => $summary,
+            'totals' => $totals,
+            'rows' => $rows,
+            'today' => $today->toDateString(),
+        ]);
+    }
+
+    /** 入金を記録し「普通預金 / 売掛金」の仕訳を起票する */
+    private function recordPayment(Invoice $invoice, string $date, int $amount, JournalService $journals): void
+    {
+        $invoice->payments()->create(['payment_date' => $date, 'amount' => $amount]);
+
+        $journals->post($date, "売掛金回収(入金消込): {$invoice->invoice_number}", [
+            ['code' => '1112', 'name' => '普通預金', 'type' => 'asset', 'side' => 'debit', 'amount' => $amount],
+            ['code' => '1131', 'name' => '売掛金', 'type' => 'asset', 'side' => 'credit', 'amount' => $amount],
+        ]);
     }
 }

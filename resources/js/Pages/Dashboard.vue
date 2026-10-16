@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from 'vue';
+import { computed } from 'vue';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
 
@@ -8,7 +8,8 @@ const props = defineProps({
     notifications: Array,
     workTimeData: Object,
     today: String,
-    currentStatus: String
+    currentStatus: String,
+    paidLeaveBalance: Object,
 });
 
 // 💡 ボタンが押されたら、Inertiaでサーバーに打刻タイプを送信
@@ -49,12 +50,8 @@ const approveLeave = (leaveId) => {
 };
 
 // 💡 勤怠の打刻状態を管理するローカルステート（後でバックエンドと連動）
-const attendanceStatus = ref('未出勤'); // 未出勤, 勤務中, 休憩中, 退勤済
+const attendanceStatus = computed(() => props.currentStatus); // 未出勤, 勤務中, 休憩中, 退勤済
 
-const clockIn = () => { attendanceStatus.value = '勤務中'; alert('出勤を打刻しました！'); };
-const clockOut = () => { attendanceStatus.value = '退勤済'; alert('退勤を打刻しました！'); };
-const breakStart = () => { attendanceStatus.value = '休憩中'; alert('休憩を開始しました！'); };
-const breakEnd = () => { attendanceStatus.value = '勤務中'; alert('休憩を終了しました！'); };
 </script>
 
 <template>
@@ -185,13 +182,18 @@ const breakEnd = () => { attendanceStatus.value = '勤務中'; alert('休憩を�
                                 </div>
 
                                 <div class="mt-6 pt-6 border-t border-slate-100">
-                                    <h5 class="text-xs font-bold text-slate-500 uppercase mb-3">自分の有給を申請する</h5>
+                                    <h5 class="text-xs font-bold text-slate-500 uppercase mb-1">自分の有給を申請する</h5>
+                                    <p class="text-[11px] text-slate-500 mb-3">
+                                        残日数 <strong class="text-slate-900">{{ paidLeaveBalance.remaining }}日</strong>
+                                        （付与 {{ paidLeaveBalance.granted }}日 / 取得済 {{ paidLeaveBalance.used }}日 / 申請中 {{ paidLeaveBalance.pending }}日）
+                                    </p>
                                     <form @submit.prevent="submitLeave" class="space-y-3">
                                         <div class="grid grid-cols-2 gap-2">
                                             <input v-model="leaveForm.start_date" type="date" required class="block w-full rounded-lg border-slate-200 text-xs" />
                                             <input v-model="leaveForm.end_date" type="date" required class="block w-full rounded-lg border-slate-200 text-xs" />
                                         </div>
                                         <input v-model="leaveForm.reason" type="text" placeholder="取得理由（私用のため、など）" class="block w-full rounded-lg border-slate-200 text-xs" />
+                                        <p v-if="leaveForm.errors.start_date" class="text-xs text-rose-600">{{ leaveForm.errors.start_date }}</p>
                                         <button type="submit" :disabled="leaveForm.processing" class="w-full bg-indigo-50 text-indigo-700 text-xs font-semibold py-2 rounded-lg hover:bg-indigo-100 transition">
                                             申請を送信
                                         </button>

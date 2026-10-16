@@ -14,6 +14,7 @@ use App\Http\Controllers\PaidLeaveController;
 use App\Http\Controllers\WorkflowController;
 use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\AccountingController;
+use App\Http\Controllers\UserManagementController;
 
 Route::get('/', function () {
     if (Auth::check()) {
@@ -40,6 +41,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/companies', [CompanyController::class, 'index'])->name('companies.index');
     Route::get('/companies/create', [CompanyController::class, 'create'])->name('companies.create');
     Route::post('/companies', [CompanyController::class, 'store'])->name('companies.store');
+    Route::post('/companies/import', [CompanyController::class, 'import'])->name('companies.import');
     Route::get('/companies/{company}', [CompanyController::class, 'show'])->name('companies.show');
     Route::get('/companies/{company}/edit', [CompanyController::class, 'edit'])->name('companies.edit');
     Route::patch('/companies/{company}', [CompanyController::class, 'update'])->name('companies.update');
@@ -67,6 +69,13 @@ Route::middleware('auth')->group(function () {
 
     // ⏰ 勤怠管理の打刻ルート
     Route::post('/attendance/punch', [AttendanceController::class, 'punch'])->name('attendance.punch');
+    // 月次の勤怠集計
+    Route::get('/attendance/summary', [AttendanceController::class, 'summary'])->name('attendance.summary');
+
+    // 👥 社員アカウント管理（管理者のみ）
+    Route::get('/users', [UserManagementController::class, 'index'])->name('users.index');
+    Route::post('/users', [UserManagementController::class, 'store'])->name('users.store');
+    Route::patch('/users/{user}', [UserManagementController::class, 'update'])->name('users.update');
 
     // 🌴 有給休暇管理ルート
     Route::post('/paid-leaves', [PaidLeaveController::class, 'store'])->name('paid-leaves.store');
@@ -95,6 +104,8 @@ Route::middleware('auth')->group(function () {
     Route::post('/invoices', [InvoiceController::class, 'store'])->name('invoices.store');
     Route::get('/invoices/{invoice}', [InvoiceController::class, 'show'])->name('invoices.show');
     Route::patch('/invoices/{invoice}/status', [InvoiceController::class, 'updateStatus'])->name('invoices.status.update');
+    // 入金消込
+    Route::post('/invoices/{invoice}/payments', [InvoiceController::class, 'storePayment'])->name('invoices.payments.store');
 
     Route::middleware(['auth', 'verified'])->prefix('accounting')->name('accounting.')->group(function () {
         // 試算表画面への導線
@@ -113,6 +124,12 @@ Route::middleware('auth')->group(function () {
                 'profitAndLoss' => $statements['profit_and_loss']
             ]);
         })->name('financial-statements');
+
+        // 売掛金 年齢調べ
+        Route::get('/receivables', [InvoiceController::class, 'aging'])->name('receivables');
+
+        // 総勘定元帳・出納帳
+        Route::get('/general-ledger', [AccountingController::class, 'generalLedgerPage'])->name('general-ledger');
     });
 });
 

@@ -22,7 +22,12 @@ return new class extends Migration
         });
 
         // 既存の invoices が project_id を持っていれば projects から company_id をコピー
-        DB::statement("UPDATE invoices i JOIN projects p ON i.project_id = p.id SET i.company_id = p.company_id WHERE i.company_id IS NULL");
+        // UPDATE ... JOIN はMySQL専用構文のため、他のDB（テスト用SQLite・PostgreSQL）では相関サブクエリで同じ更新を行う
+        if (DB::getDriverName() === 'mysql') {
+            DB::statement("UPDATE invoices i JOIN projects p ON i.project_id = p.id SET i.company_id = p.company_id WHERE i.company_id IS NULL");
+        } else {
+            DB::statement("UPDATE invoices SET company_id = (SELECT p.company_id FROM projects p WHERE p.id = invoices.project_id) WHERE company_id IS NULL");
+        }
     }
 
     /**

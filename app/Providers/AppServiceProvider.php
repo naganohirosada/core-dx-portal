@@ -26,5 +26,10 @@ class AppServiceProvider extends ServiceProvider
         Gate::define('approve-and-invoice', function (User $user) {
             return in_array($user->role, ['admin', 'manager']);
         });
+
+        // 社員アカウントの追加・変更は管理者(admin)のみ
+        Gate::define('manage-users', function (User $user) {
+            return $user->role === 'admin';
+        });
     }
 }

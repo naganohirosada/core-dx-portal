@@ -61,9 +61,19 @@ const canManage = () => {
                         <span>💴</span> <span>請求書・売上管理</span>
                     </Link>
 
+                    <!-- 売掛金 年齢調べへの導線 -->
+                    <Link :href="route('accounting.receivables')" :class="route().current('accounting.receivables') ? 'bg-indigo-600 text-white' : 'hover:bg-slate-800 hover:text-white'" class="flex items-center space-x-3 px-3 py-2.5 rounded-lg text-sm font-medium transition">
+                        <span>⏳</span> <span>売掛金 年齢調べ</span>
+                    </Link>
+
                     <!-- 合計残高試算表への導線 -->
                     <Link :href="route('accounting.trial-balance')" :class="route().current('accounting.trial-balance') ? 'bg-indigo-600 text-white' : 'hover:bg-slate-800 hover:text-white'" class="flex items-center space-x-3 px-3 py-2.5 rounded-lg text-sm font-medium transition">
                         <span>📊</span> <span>合計残高試算表</span>
+                    </Link>
+
+                    <!-- 総勘定元帳・出納帳への導線 -->
+                    <Link :href="route('accounting.general-ledger')" :class="route().current('accounting.general-ledger') ? 'bg-indigo-600 text-white' : 'hover:bg-slate-800 hover:text-white'" class="flex items-center space-x-3 px-3 py-2.5 rounded-lg text-sm font-medium transition">
+                        <span>📒</span> <span>総勘定元帳・出納帳</span>
                     </Link>
 
                     <!-- 決算財務諸表への導線 -->
@@ -88,6 +98,22 @@ const canManage = () => {
                     class="flex items-center space-x-3 px-3 py-2 rounded-lg text-xs font-medium transition"
                 >
                     <span>⚙️</span> <span>システム自社設定</span>
+                </Link>
+                <Link 
+                    v-if="canManage()" 
+                    :href="route('attendance.summary')" 
+                    :class="route().current('attendance.summary') ? 'bg-indigo-600 text-white' : 'hover:bg-slate-800 text-slate-300'" 
+                    class="flex items-center space-x-3 px-3 py-2 rounded-lg text-xs font-medium transition"
+                >
+                    <span>⏱️</span> <span>月次勤怠集計</span>
+                </Link>
+                <Link 
+                    v-if="user.role === 'admin'" 
+                    :href="route('users.index')" 
+                    :class="route().current('users.index') ? 'bg-indigo-600 text-white' : 'hover:bg-slate-800 text-slate-300'" 
+                    class="flex items-center space-x-3 px-3 py-2 rounded-lg text-xs font-medium transition"
+                >
+                    <span>👥</span> <span>社員アカウント管理</span>
                 </Link>
                 <button @click="logout" class="w-full text-left flex items-center space-x-3 px-3 py-2 rounded-lg text-xs font-semibold text-rose-400 hover:bg-rose-500/10 transition">
                     <span>🚪</span> <span>システムからログアウト</span>

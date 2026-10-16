@@ -1,7 +1,7 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, useForm, Link, router } from '@inertiajs/vue3';
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 
 const props = defineProps({
     invoices: Array,
@@ -57,6 +57,28 @@ const submit = () => {
 
 const updateStatus = (id, status) => {
     router.patch(route('invoices.status.update', id), { status: status });
+};
+
+// 💡 入金消込：入金日と入金額を登録（一部入金にも対応）
+const paymentTarget = ref(null);
+const paymentForm = useForm({
+    payment_date: new Date().toISOString().slice(0, 10),
+    amount: 0,
+});
+
+const outstanding = (inv) => inv.amount - Number(inv.paid_amount || 0);
+
+const openPayment = (inv) => {
+    paymentTarget.value = paymentTarget.value === inv.id ? null : inv.id;
+    paymentForm.clearErrors();
+    paymentForm.amount = outstanding(inv);
+};
+
+const submitPayment = (inv) => {
+    paymentForm.post(route('invoices.payments.store', inv.id), {
+        preserveScroll: true,
+        onSuccess: () => { paymentTarget.value = null; },
+    });
 };
 
 const statusLabel = (status) => {
@@ -143,7 +165,10 @@ const statusLabel = (status) => {
                 </div>
 
                 <div class="bg-white p-6 shadow-sm border border-slate-100 rounded-xl lg:col-span-2">
-                    <h3 class="text-base font-bold text-slate-900 mb-4">請求書発行履歴</h3>
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-base font-bold text-slate-900">請求書発行履歴</h3>
+                        <Link :href="route('accounting.receivables')" class="text-xs text-indigo-600 hover:underline">売掛金 年齢調べ ➔</Link>
+                    </div>
                     <div class="overflow-x-auto">
                         <table class="w-full text-sm text-left">
                             <thead class="bg-slate-50 text-slate-500 text-xs font-medium uppercase">
@@ -151,18 +176,21 @@ const statusLabel = (status) => {
                                     <th class="p-3">請求番号</th>
                                     <th class="p-3">請求先顧客 / 案件</th>
                                     <th class="p-3 text-right">金額</th>
+                                    <th class="p-3 text-right">未回収残高</th>
                                     <th class="p-3 text-center">ステータス</th>
                                     <th class="p-3 text-center">操作</th>
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-slate-100 text-slate-600">
-                                <tr v-for="inv in invoices" :key="inv.id" class="hover:bg-slate-50/50 transition">
+                                <template v-for="inv in invoices" :key="inv.id">
+                                <tr class="hover:bg-slate-50/50 transition">
                                     <td class="p-3 font-mono text-xs font-bold text-slate-900">{{ inv.invoice_number }}</td>
                                     <td class="p-3">
                                         <p class="font-semibold text-slate-800 text-xs">{{ inv.project?.company?.name }}</p>
                                         <p class="text-slate-500 text-[11px] mt-0.5">{{ inv.project?.name }}</p>
                                     </td>
                                     <td class="p-3 text-right font-mono font-bold text-slate-900">{{ inv.amount.toLocaleString() }}円</td>
+                                    <td class="p-3 text-right font-mono" :class="outstanding(inv) > 0 ? 'text-rose-600 font-bold' : 'text-slate-400'">{{ outstanding(inv).toLocaleString() }}円</td>
                                     <td class="p-3 text-center">
                                         <select :value="inv.status" @change="updateStatus(inv.id, $event.target.value)" class="text-xs py-1 rounded-md border-slate-200 font-medium">
                                             <option value="draft">下書き</option>
@@ -174,10 +202,32 @@ const statusLabel = (status) => {
                                         <Link :href="route('invoices.show', inv.id)" class="text-xs font-bold text-indigo-600 bg-indigo-50 px-2.5 py-1.5 rounded-lg hover:bg-indigo-600 hover:text-white transition">
                                             表示・印刷
                                         </Link>
+                                        <button v-if="outstanding(inv) > 0" type="button" @click="openPayment(inv)" class="mt-1.5 block mx-auto text-xs font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1.5 rounded-lg hover:bg-emerald-600 hover:text-white transition">
+                                            入金消込
+                                        </button>
                                     </td>
                                 </tr>
+                                <tr v-if="paymentTarget === inv.id" class="bg-emerald-50/40">
+                                    <td colspan="6" class="p-3">
+                                        <form @submit.prevent="submitPayment(inv)" class="flex flex-wrap items-end gap-3">
+                                            <div>
+                                                <label class="block text-[11px] font-medium text-slate-500 mb-1">入金日</label>
+                                                <input v-model="paymentForm.payment_date" type="date" required class="rounded-lg border-slate-200 text-xs" />
+                                            </div>
+                                            <div>
+                                                <label class="block text-[11px] font-medium text-slate-500 mb-1">入金額（残高 {{ outstanding(inv).toLocaleString() }}円）</label>
+                                                <input v-model.number="paymentForm.amount" type="number" min="1" :max="outstanding(inv)" required class="rounded-lg border-slate-200 text-xs w-40" />
+                                            </div>
+                                            <button type="submit" :disabled="paymentForm.processing" class="bg-emerald-600 text-white text-xs font-bold px-4 py-2 rounded-lg hover:bg-emerald-500 transition">
+                                                入金を登録して消込
+                                            </button>
+                                            <p v-if="paymentForm.errors.amount" class="w-full text-xs text-rose-600">{{ paymentForm.errors.amount }}</p>
+                                        </form>
+                                    </td>
+                                </tr>
+                                </template>
                                 <tr v-if="invoices.length === 0">
-                                    <td colspan="5" class="p-6 text-center text-xs text-slate-400">作成済みの請求書はありません。</td>
+                                    <td colspan="6" class="p-6 text-center text-xs text-slate-400">作成済みの請求書はありません。</td>
                                 </tr>
                             </tbody>
                         </table>

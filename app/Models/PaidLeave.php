@@ -30,4 +30,16 @@ class PaidLeave extends Model
     {
         return $this->belongsTo(User::class);
     }
+
+    /** 期間内の平日（土日を除く）の日数 */
+    public static function countWeekdays(\DateTimeInterface $start, \DateTimeInterface $end): int
+    {
+        $days = 0;
+        foreach (\Carbon\CarbonPeriod::create($start, $end) as $date) {
+            if (! $date->isWeekend()) {
+                $days++;
+            }
+        }
+        return $days;
+    }
 }

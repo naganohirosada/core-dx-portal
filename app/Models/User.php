@@ -36,6 +36,22 @@ class User extends Authenticatable
         return $this->hasMany(PaidLeave::class);
     }
 
+    /** 承認済み・申請中の有給取得日数と残日数（土日を除く日数で数える） */
+    public function paidLeaveBalance(): array
+    {
+        $leaves = $this->paidLeaves()->whereIn('status', ['approved', 'pending'])->get();
+        $used = $leaves->where('status', 'approved')->sum(fn ($l) => PaidLeave::countWeekdays($l->start_date, $l->end_date));
+        $pending = $leaves->where('status', 'pending')->sum(fn ($l) => PaidLeave::countWeekdays($l->start_date, $l->end_date));
+        $granted = (int) ($this->paid_leave_days ?? 0);
+
+        return [
+            'granted' => $granted,
+            'used' => $used,
+            'pending' => $pending,
+            'remaining' => $granted - $used,
+        ];
+    }
+
     public function workflows(): \Illuminate\Database\Eloquent\Relations\HasMany {
         return $this->hasMany(Workflow::class);
     }

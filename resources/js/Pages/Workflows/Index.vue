@@ -4,11 +4,13 @@ import { Head, useForm, router } from '@inertiajs/vue3';
 
 defineProps({
     myWorkflows: Array,
-    pendingWorkflows: Array
+    pendingWorkflows: Array,
+    expenseCategories: Array,
 });
 
 const form = useForm({
     type: 'expense',
+    expense_category: 'travel',
     title: '',
     amount: '',
     description: '',
@@ -57,13 +59,21 @@ const statusClass = (status) => {
                                 <option value="ringi">稟議・購買申請</option>
                             </select>
                         </div>
+                        <div v-if="form.type === 'expense'">
+                            <label class="block text-xs font-medium text-slate-500 mb-1">経費区分（承認時に仕訳される勘定科目）</label>
+                            <select v-model="form.expense_category" class="block w-full rounded-lg border-slate-200 text-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                <option v-for="c in expenseCategories" :key="c.value" :value="c.value">{{ c.label }}</option>
+                            </select>
+                            <p v-if="form.errors.expense_category" class="text-xs text-rose-600 mt-1">{{ form.errors.expense_category }}</p>
+                        </div>
                         <div>
                             <label class="block text-xs font-medium text-slate-500 mb-1">タイトル</label>
                             <input v-model="form.title" type="text" required placeholder="品名や目的など" class="block w-full rounded-lg border-slate-200 text-sm" />
                         </div>
                         <div>
-                            <label class="block text-xs font-medium text-slate-500 mb-1">金額 (円・任意)</label>
-                            <input v-model="form.amount" type="number" placeholder="12500" class="block w-full rounded-lg border-slate-200 text-sm" />
+                            <label class="block text-xs font-medium text-slate-500 mb-1">金額 (円{{ form.type === 'expense' ? '・必須' : '・任意' }})</label>
+                            <input v-model="form.amount" type="number" placeholder="12500" :required="form.type === 'expense'" class="block w-full rounded-lg border-slate-200 text-sm" />
+                            <p v-if="form.errors.amount" class="text-xs text-rose-600 mt-1">{{ form.errors.amount }}</p>
                         </div>
                         <div>
                             <label class="block text-xs font-medium text-slate-500 mb-1">詳細・理由</label>
@@ -97,7 +107,7 @@ const statusClass = (status) => {
                                     <button @click="handleAction(wf.id, 'reject')" class="bg-slate-100 text-slate-600 text-xs font-bold px-3 py-1.5 rounded-lg hover:bg-rose-50 hover:text-rose-600 transition">
                                         却下
                                     </button>
-                                    <button @click="approveNotification(notif)" class="absolute right-3 top-1/2 -translate-y-1/2 bg-slate-900 text-white text-xs px-2.5 py-1 rounded shadow-sm hover:bg-indigo-600 transition">
+                                    <button @click="handleAction(wf.id, 'approve')" class="bg-slate-900 text-white text-xs font-bold px-3 py-1.5 rounded-lg hover:bg-indigo-600 transition">
                                         承認
                                     </button>
                                 </div>

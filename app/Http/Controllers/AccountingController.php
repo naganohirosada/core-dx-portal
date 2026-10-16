@@ -70,6 +70,49 @@ class AccountingController extends Controller
 		->get();
 		return response()->json(['account' => $account, 'details' =>$details]);
 	}
+	// 3-2 総勘定元帳・出納帳 画面(勘定科目を選んで、日付順の明細と残高推移を表示)
+	public function generalLedgerPage(Request $request)
+	{
+		$accounts = Account::orderBy('code')->get(['id', 'code', 'name', 'type']);
+
+		$account = $request->filled('account_id')
+			? $accounts->firstWhere('id', (int) $request->input('account_id'))
+			: $accounts->first();
+
+		$rows = [];
+		if ($account) {
+			// 借方残の科目(資産・費用)は借方で増加、それ以外は貸方で増加
+			$debitNormal = in_array($account->type, ['asset', 'expense']);
+			$balance = 0;
+
+			$details = JournalDetail::with('journal')
+				->where('account_id', $account->id)
+				->get()
+				->sortBy(fn ($d) => [$d->journal->date, $d->journal_id])
+				->values();
+
+			foreach ($details as $detail) {
+				$debit = $detail->side === 'debit' ? (float) $detail->amount : 0;
+				$credit = $detail->side === 'credit' ? (float) $detail->amount : 0;
+				$balance += $debitNormal ? $debit - $credit : $credit - $debit;
+				$rows[] = [
+					'id' => $detail->id,
+					'date' => $detail->journal->date,
+					'description' => $detail->journal->description,
+					'debit' => $debit,
+					'credit' => $credit,
+					'balance' => $balance,
+				];
+			}
+		}
+
+		return inertia('Accounting/GeneralLedger', [
+			'accounts' => $accounts,
+			'selectedAccount' => $account,
+			'rows' => $rows,
+		]);
+	}
+
 	// 4 合計残高試算表 (Trial Balance) & 財務三表(B/S, P/L)の集計
 	public function getFinancialStatements()
 	{

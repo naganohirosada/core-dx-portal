@@ -7,6 +7,7 @@ use App\Models\Event;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
+use Carbon\Carbon;
 
 class PaidLeaveController extends Controller
 {
@@ -18,6 +19,16 @@ class PaidLeaveController extends Controller
             'end_date' => 'required|date|after_or_equal:start_date',
             'reason' => 'nullable|string',
         ]);
+
+        // 残日数（申請中の分を差し引いた日数）を超える申請は受け付けない
+        $requestedDays = PaidLeave::countWeekdays(Carbon::parse($validated['start_date']), Carbon::parse($validated['end_date']));
+        $balance = Auth::user()->paidLeaveBalance();
+        $available = $balance['remaining'] - $balance['pending'];
+        if ($requestedDays > $available) {
+            return redirect()->back()->withErrors([
+                'start_date' => "有給の残日数が不足しています（申請 {$requestedDays}日 / 申請可能 {$available}日）。",
+            ]);
+        }
 
         // ログインユーザーに紐づけて承認待ち(pending)で作成
         Auth::user()->paidLeaves()->create($validated);

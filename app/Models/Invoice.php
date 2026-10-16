@@ -50,4 +50,15 @@ class Invoice extends Model
     {
         return $this->hasMany(InvoiceItem::class);
     }
+
+    public function payments(): HasMany
+    {
+        return $this->hasMany(InvoicePayment::class);
+    }
+
+    /** 未回収残高（請求額 − 入金済額） */
+    public function outstandingAmount(): int
+    {
+        return (int) $this->amount - (int) $this->payments()->sum('amount');
+    }
 }

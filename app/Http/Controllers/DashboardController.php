@@ -11,6 +11,7 @@ use App\Models\Workflow;
 use Inertia\Inertia;
 use Carbon\Carbon;
 use App\Models\PaidLeave;
+use App\Models\User;
 
 class DashboardController extends Controller
 {
@@ -35,36 +36,35 @@ class DashboardController extends Controller
             ->get();
 
         // 💡 ----------------------------------------------------
-        // 📊 本物の作業ログから今月（2026年6月など）の週別稼働時間を集計！
+        // 📊 勤怠打刻（出勤〜退勤 − 休憩）から今月の週別の実労働時間を集計
         // 💡 ----------------------------------------------------
         $now = Carbon::now();
-        $startOfMonth = $now->copy()->startOfMonth();
 
-        // 週ごとの個人の稼働時間を初期化 [第1週, 第2週, 第3週, 第4週]
-        $personalHours = [0, 0, 0, 0];
+        // 月の何週目か（1〜7日は第1週、8〜14日は第2週、15〜21日は第3週、22日以降は第4週）
+        $weekIndex = fn ($date) => min(intdiv(Carbon::parse($date)->day - 1, 7), 3);
 
-        // 今月の全作業ログを取得
-        $logs = WorkLog::where('user_id', $userId)
-            ->whereMonth('date', $now->month)
+        $attendances = Attendance::whereMonth('date', $now->month)
             ->whereYear('date', $now->year)
             ->get();
 
-        foreach ($logs as $log) {
-            $logDate = Carbon::parse($log->date);
-            // 月の何週目かをざっくり計算（1〜7日は1週目、8〜14日は2週目...）
-            $dayNum = $logDate->day;
-            if ($dayNum <= 7)  $personalHours[0] += (float)$log->hours;
-            elseif ($dayNum <= 14) $personalHours[1] += (float)$log->hours;
-            elseif ($dayNum <= 21) $personalHours[2] += (float)$log->hours;
-            else $personalHours[3] += (float)$log->hours;
+        $personalHours = [0, 0, 0, 0];
+        $companyHours = [0, 0, 0, 0];
+        foreach ($attendances as $attendance) {
+            $hours = $attendance->workedHours();
+            $week = $weekIndex($attendance->date);
+            $companyHours[$week] += $hours;
+            if ($attendance->user_id === $userId) {
+                $personalHours[$week] += $hours;
+            }
         }
 
-        // 全社平均は、とりあえず綺麗に見せるための固定ライン（または簡単な全社平均ロジック）
-        $teamAvgHours = [25, 30, 28, 35]; 
+        // 全社平均 = 自社の全社員の実労働時間合計 ÷ 社員数
+        $memberCount = max(User::count(), 1);
+        $teamAvgHours = array_map(fn ($h) => round($h / $memberCount, 1), $companyHours);
 
         $workTimeData = [
             'labels' => ['第1週', '第2週', '第3週', '第4週'],
-            'personal' => $personalHours, // 💡 ここが本物になりました！
+            'personal' => array_map(fn ($h) => round($h, 1), $personalHours),
             'team_avg' => $teamAvgHours,
         ];
 
@@ -103,6 +103,7 @@ class DashboardController extends Controller
             'workTimeData' => $workTimeData,
             'today' => Carbon::today()->format('Y年m月d日'),
             'notifications' => $allNotifications,
+            'paidLeaveBalance' => Auth::user()->paidLeaveBalance(),
         ]);
     }
 }
